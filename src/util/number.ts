@@ -403,6 +403,7 @@ export function quantity(val: number): number {
 }
 
 /**
+ * 获得一个数以10为底的指数部分
  * Exponent of the quantity of a number
  * e.g., 1234 equals to 1.234*10^3, so quantityExponent(1234) is 3
  *
@@ -416,6 +417,8 @@ export function quantityExponent(val: number): number {
 
     let exp = Math.floor(Math.log(val) / Math.LN10);
     /**
+     * 针对js的精度修复
+     * 
      * exp is expected to be the rounded-down result of the base-10 log of val.
      * But due to the precision loss with Math.log(val), we need to restore it
      * using 10^exp to make sure we can get val back from exp. #11249
@@ -438,9 +441,15 @@ export function quantityExponent(val: number): number {
  * @return Niced number
  */
 export function nice(val: number, round?: boolean): number {
+    // 首先找到一个数的指数
     const exponent = quantityExponent(val);
+    // 10 ** exponent 得到具体的数量级
     const exp10 = Math.pow(10, exponent);
+
+    // 得出前面的尾数
     const f = val / exp10; // 1 <= f < 10
+
+    //接下来根据这个尾数，计算出所谓“完美位数”
     let nf;
     if (round) {
         if (f < 1.5) {
@@ -478,6 +487,7 @@ export function nice(val: number, round?: boolean): number {
     }
     val = nf * exp10;
 
+    // 针对js精度问题进行一次修复
     // Fix 3 * 0.1 === 0.30000000000000004 issue (see IEEE 754).
     // 20 is the uppper bound of toFixed.
     return exponent >= -20 ? +val.toFixed(exponent < 0 ? -exponent : 0) : val;
